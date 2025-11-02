@@ -11,7 +11,8 @@ import time
 import config
 
 # آدرس پایه API صرافی
-BASE_URL = "https://api.coinex.com"
+# *** نکته مهم: /v1 در اینجا اضافه شده تا خطای 404 رخ ندهد ***
+BASE_URL = "https://api.coinex.com/v1"
 
 def _get_auth_headers(endpoint: str, body_str: str, method: str = "POST"):
     """
