@@ -1,8 +1,7 @@
 # coinex_api.py
 """
 ماژول API صرافی CoinEx.
-شامل تمام توابع برای تعامل با اندپوینت‌های CoinEx،
-از جمله احراز هویت، تنظیم اهرم، و ثبت سفارش.
+(اصلاحیه نهایی بر اساس مستندات رسمی V2)
 """
 import requests
 import hashlib
@@ -11,13 +10,16 @@ import time
 import config
 
 # آدرس پایه API صرافی
-# *** نکته مهم: /v1 در اینجا اضافه شده تا خطای 404 رخ ندهد ***
-BASE_URL = "https://api.coinex.com/v1"
+# *** اصلاحیه نهایی: آدرس پایه صحیح بر اساس مستندات V2 ***
+BASE_URL = "https://api.coinex.com/v2"
 
 def _get_auth_headers(endpoint: str, body_str: str, method: str = "POST"):
     """
-    یک تابع کمکی داخلی برای ساخت هدرهای احراز هویت V2.
+    یک تابع کمکی داخلی برای ساخت هدرهای احراز هویت.
     """
+    # خط دیباگ برای بررسی اینکه کدام Access ID در حال خوانده شدن است
+    print(f"[Debug] Using Access ID: {config.COINEX_ACCESS_ID}") 
+    
     timestamp = str(int(time.time() * 1000))
     
     # V2 Signature: Method + Endpoint + Body + Timestamp + SecretKey
@@ -36,6 +38,7 @@ def adjust_leverage(market: str, margin_mode: str, leverage: int):
     """
     تنظیم اهرم و مد مارجین برای یک مارکت فیوچرز.
     """
+    # *** اصلاحیه: اندپوینت کامل بر اساس مستندات V2 ***
     endpoint = "/futures/adjust-position-leverage"
     url = BASE_URL + endpoint
     
@@ -50,6 +53,7 @@ def adjust_leverage(market: str, margin_mode: str, leverage: int):
     headers = _get_auth_headers(endpoint, body_str, "POST")
     
     print(f"[API] 🌀 در حال تنظیم اهرم برای {market} به {leverage}x ({margin_mode})")
+    print(f"[API] URL نهایی: {url}") # برای دیباگ
     
     try:
         response = requests.post(url, data=body_str, headers=headers)
@@ -73,8 +77,8 @@ def adjust_leverage(market: str, margin_mode: str, leverage: int):
 def place_limit_order(market: str, side: str, amount: str, price: str):
     """
     برای ثبت سفارش لیمیت در فیوچرز CoinEx (برای باز کردن پوزیشن).
-    Parameters: side (str): جهت سفارش ("buy" or "sell")
     """
+    # *** اصلاحیه: اندپوینت کامل بر اساس مستندات V2 ***
     endpoint = "/futures/put-limit-order"
     url = BASE_URL + endpoint
     
@@ -84,7 +88,7 @@ def place_limit_order(market: str, side: str, amount: str, price: str):
         "side": side.lower(), # "buy" or "sell"
         "amount": amount,
         "price": price,
-        "effect_type": "normal" # 'normal' برای باز کردن پوزیشن
+        "effect_type": "normal"
     }
     body_str = json.dumps(body)
     
@@ -114,14 +118,9 @@ def place_limit_order(market: str, side: str, amount: str, price: str):
 def close_limit_order(market: str, side_to_close: str, amount: str, price: str):
     """
     برای بستن یک پوزیشن باز با یک سفارش لیمیت.
-    Parameters: side_to_close (str): جهت پوزیشن فعلی ('long' or 'short')
     """
-    
-    # برای بستن 'long'، باید 'sell' کنیم.
-    # برای بستن 'short'، باید 'buy' کنیم.
     close_side = "sell" if side_to_close == "long" else "buy"
     
     print(f"[API] 🌀 اقدام برای بستن پوزیشن {side_to_close} با سفارش {close_side} ...")
     
-    # برای بستن پوزیشن از همان اندپوینت 'place_limit_order' استفاده می‌کنیم
     return place_limit_order(market, close_side, amount, price)
