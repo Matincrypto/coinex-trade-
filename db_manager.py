@@ -30,7 +30,6 @@ def create_connection():
 def initialize_database():
     """
     جدول مورد نیاز ربات را در دیتابیس ایجاد می‌کند.
-    این تابع باید یک بار در ابتدای اجرای ربات فراخوانی شود.
     """
     conn = create_connection()
     if conn is None:
@@ -39,14 +38,13 @@ def initialize_database():
         
     cursor = conn.cursor()
     
-    # 'symbol' را 'UNIQUE' تعریف می‌کنیم تا مطمئن شویم برای هر ارز فقط یک ردیف داریم
     create_table_query = """
     CREATE TABLE IF NOT EXISTS active_positions (
         id INT AUTO_INCREMENT PRIMARY KEY,
         symbol VARCHAR(20) NOT NULL UNIQUE,
-        side VARCHAR(10) NOT NULL,          -- 'long' or 'short'
+        side VARCHAR(10) NOT NULL,
         entry_price DECIMAL(20, 8) NOT NULL,
-        amount VARCHAR(50) NOT NULL,        -- مقدار پوزیشن (به BTC)
+        amount VARCHAR(50) NOT NULL,
         last_signal_id VARCHAR(100)
     )
     """
@@ -69,13 +67,13 @@ def get_position(symbol: str):
     if conn is None:
         return None
         
-    cursor = conn.cursor(dictionary=True) # نتایج را به صورت دیکشنری برمی‌گرداند
+    cursor = conn.cursor(dictionary=True)
     
     try:
         query = "SELECT * FROM active_positions WHERE symbol = %s"
         cursor.execute(query, (symbol,))
         position = cursor.fetchone()
-        return position  # اگر پوزیشنی نباشد، None برمی‌گرداند
+        return position
     except mysql.connector.Error as err:
         print(f"[DB] خطا در خواندن پوزیشن: {err}")
         return None
